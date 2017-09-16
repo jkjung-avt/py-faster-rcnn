@@ -35,7 +35,7 @@ for year in ['2015']:
 
 # Set up brainwash_<split>
 frcn_root = osp.abspath(osp.join(osp.dirname(__file__), '..', '..'))
-brainwash_devkit_path = osp.join(frcn_root, 'Brainwash_detectnet')
+brainwash_devkit_path = osp.join(frcn_root, 'data/Brainwash_detectnet')
 for split in ['train', 'val']:
     name = 'brainwash_{}'.format(split)
     __sets[name] = (lambda split=split: brainwash(split, brainwash_devkit_path))

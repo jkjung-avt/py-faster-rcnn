@@ -120,7 +120,7 @@ class brainwash(imdb):
         Load image and bounding boxes info from txt files of brainwashPerson.
         """
         # index is 'XXX.png', so we need to strip file extension first
-        basename = os.path.basename(index)
+        basename = os.path.splitext(index)[0]
         filename = os.path.join(self._label_dir, basename + '.txt')
         # print 'Loading: {}'.format(filename)
         objs = []
@@ -130,7 +130,9 @@ class brainwash(imdb):
                 if items[0] == 'Car':
                     objs.append(items)
         num_objs = len(objs)
-        assert num_objs > 0
+        #assert num_objs > 0
+        if num_objs == 0:
+            print('### No objects in {}!'.format(index))
 
         boxes = np.zeros((num_objs, 4), dtype=np.uint16)
         gt_classes = np.zeros((num_objs), dtype=np.int32)
