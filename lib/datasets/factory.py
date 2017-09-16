@@ -11,7 +11,9 @@ __sets = {}
 
 from datasets.pascal_voc import pascal_voc
 from datasets.coco import coco
+from datasets.brainwash import brainwash
 import numpy as np
+import os.path as osp
 
 # Set up voc_<year>_<split> using selective search "fast" mode
 for year in ['2007', '2012']:
@@ -30,6 +32,13 @@ for year in ['2015']:
     for split in ['test', 'test-dev']:
         name = 'coco_{}_{}'.format(year, split)
         __sets[name] = (lambda split=split, year=year: coco(split, year))
+
+# Set up brainwash_<split>
+frcn_root = osp.abspath(osp.join(osp.dirname(__file__), '..', '..'))
+brainwash_devkit_path = osp.join(frcn_root, 'Brainwash_detectnet')
+for split in ['train', 'val']:
+    name = 'brainwash_{}'.format(split)
+    __sets[name] = (lambda split=split: brainwash(split, brainwash_devkit_path))
 
 def get_imdb(name):
     """Get an imdb (image database) by name."""
