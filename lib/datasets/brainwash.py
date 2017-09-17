@@ -23,7 +23,7 @@ from brainwash_eval import brainwash_eval
 
 class brainwash(imdb):
     def __init__(self, image_set, devkit_path):
-        imdb.__init__(self, image_set)
+        imdb.__init__(self, 'brainwash_' + image_set)
         self._image_set = image_set  # 'train' or 'val'
         self._devkit_path = devkit_path
         self._data_path = os.path.join(self._devkit_path, 'detectnet_640x480')
@@ -98,7 +98,7 @@ class brainwash(imdb):
         return gt_roidb
 
     def rpn_roidb(self):
-        assert(False, 'brainwash.rpn_roidb() called!')
+        print('### brainwash.rpn_roidb() called!')
         gt_roidb = self.gt_roidb()
         rpn_roidb = self._load_rpn_roidb(gt_roidb)
         roidb = imdb.merge_roidbs(gt_roidb, rpn_roidb)
@@ -106,7 +106,7 @@ class brainwash(imdb):
         return roidb
 
     def _load_rpn_roidb(self, gt_roidb):
-        assert(False, 'brainwash._load_rpn_roidb() called!')
+        print('### brainwash._load_rpn_roidb() called!')
         filename = self.config['rpn_file']
         print 'loading {}'.format(filename)
         assert os.path.exists(filename), \
