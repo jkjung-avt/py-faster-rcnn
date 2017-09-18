@@ -24,10 +24,10 @@ def parse_rec(filename):
     objects = []
     for ix, items in enumerate(objs):
         obj_struct = {}
-        obj_struct['bbox'] = [int(items[4]),
-                              int(items[5]),
-                              int(items[6]),
-                              int(items[7])]
+        obj_struct['bbox'] = [int(float(items[4])),
+                              int(float(items[5])),
+                              int(float(items[6])),
+                              int(float(items[7]))]
         obj_struct['name'] = items[0]  # 'Car'
         obj_struct['difficult'] = 0
         objects.append(obj_struct)
