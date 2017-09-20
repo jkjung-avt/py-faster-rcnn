@@ -42,7 +42,8 @@ The following steps demonstrate how to train a VGG16 based Faster RCNN:
 
    $ time ./tools/train_net.py --gpu 0 --solver ./models/brainwash/VGG16/faster_rcnn_end2end/solver-2.prototxt --weights ./output/faster_rcnn_end2end/brainwash_train.bak/vgg16_faster_rcnn_iter_70000.caffemodel --imdb brainwash_train --iters 30000 --cfg experiments/cfgs/brainwash.yml 2>&1 | tee -a ./experiments/logs/brainwash-2.log
 
-8. To deploy the trained model onto Jetson TX2, you'd only need these 2 files.
+8. To deploy the trained model onto Jetson TX2, you mainly need the trained caffemodel snapshot: './output/faster_rcnn_end2end/brainwash_train/brainwash_vgg16_finetune_iter_30000.caffemodel'
 
-   models/brainwash/VGG16/faster_rcnn_end2end/test.prototxt
-   output/faster_rcnn_end2end/brainwash_train/vgg16_faster_rcnn_iter_70000.caffemodel
+   More specifically, make a copy of 'brainwash_vgg16_finetune_iter_30000.caffemodel' and put it onto Jetson TX2 under './data/faster_rcnn_models/'. Then put all PNG image files to be tested in the './demo/brainwash' folder. Run the following command, which would randomly pick 10 images for testing.
+
+   $ ./tools/demo_brainwash.sh --net vgg16
