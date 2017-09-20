@@ -96,7 +96,7 @@ def parse_args():
                         help='Use CPU mode (overrides --gpu)',
                         action='store_true')
     parser.add_argument('--net', dest='demo_net', help='Network to use [zf]',
-                        choices=NETS.keys(), default='zf')
+                        choices=['zf','vgg16'], default='zf')
     args = parser.parse_args()
 
     return args
