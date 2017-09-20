@@ -23,6 +23,7 @@ import numpy as np
 import scipy.io as sio
 import caffe, os, sys, cv2
 import argparse
+import sys
 
 CLASSES = ('__background__', 'Car')
 
@@ -94,6 +95,8 @@ def parse_args():
     parser.add_argument('--cpu', dest='cpu_mode',
                         help='Use CPU mode (overrides --gpu)',
                         action='store_true')
+    parser.add_argument('--net', dest='demo_net', help='Network to use [zf]',
+                        choices=NETS.keys(), default='zf')
     args = parser.parse_args()
 
     return args
@@ -103,8 +106,14 @@ if __name__ == '__main__':
 
     args = parse_args()
 
-    prototxt = 'models/brainwash/VGG16/faster_rcnn_end2end/test.prototxt'
-    caffemodel = 'vgg16_faster_rcnn_iter_70000.caffemodel'
+    if args.demo_net == 'vgg16':
+        prototxt = 'models/brainwash/VGG16/faster_rcnn_end2end/test.prototxt'
+        caffemodel = 'data/faster_rcnn_models/brainwash_vgg16_finetune_iter_30000.caffemodel'
+    elif args.demo_net == 'zf':
+        prototxt = 'models/brainwash/ZF/faster_rcnn_end2end/test.prototxt'
+        caffemodel = 'data/faster_rcnn_models/brainwash_zf_finetune_iter_70000.caffemodel'
+    else:
+        sys.exit('A valid network model has not been specified!')
 
     if not os.path.isfile(caffemodel):
         raise IOError(('{:s} not found.\nDid you run ./data/script/'
