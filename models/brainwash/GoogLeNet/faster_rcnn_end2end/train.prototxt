@@ -23,6 +23,36 @@ layer {
 # fine-tuning on the last few layers.
 
 layer {
+  name: "conv1/7x7_s2"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1/7x7_s2"
+  param {
+    #lr_mult: 1
+    lr_mult: 0
+    #decay_mult: 1
+    decay_mult: 0
+  }
+  param {
+    #lr_mult: 2
+    lr_mult: 0
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 64
+    pad: 3
+    kernel_size: 7
+    stride: 2
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.2
+    }
+  }
+}
+layer {
   name: "conv1/relu_7x7"
   type: "ReLU"
   bottom: "conv1/7x7_s2"
