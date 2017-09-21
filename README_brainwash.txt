@@ -30,17 +30,17 @@ The following steps demonstrate how to train a VGG16 based Faster RCNN:
 
    experiments/cfgs/brainwash.yml
 
-5. Run the following command to start training. This trains the model for 70,000 iterations. It also write a log file './experiments/logs/brainwash-1.log'.
+5. Run the following command to start training. This trains the model for 70,000 iterations. And it writes logs to './experiments/logs/brainwash-1.log'.
 
-   $ time ./tools/train_net.py --gpu 0 --solver ./models/brainwash/VGG16/faster_rcnn_end2end/solver.prototxt --weights ./data/imagenet_models/VGG16.v2.caffemodel --imdb brainwash_train --iters 70000 --cfg experiments/cfgs/brainwash.yml 2>&1 | tee -a ./experiments/logs/brainwash-1.log
+   $ time python ./tools/train_net.py --gpu 0 --solver ./models/brainwash/VGG16/faster_rcnn_end2end/solver.prototxt --weights ./data/imagenet_models/VGG16.v2.caffemodel --imdb brainwash_train --iters 70000 --cfg experiments/cfgs/brainwash.yml 2>&1 | tee -a ./experiments/logs/brainwash-1.log
 
 6. To test the trained model (taking snapshot #70,000 as example). The output is the mAP value.
 
-   $ ./tools/test_net.py --gpu 0 --def ./models/brainwash/VGG16/faster_rcnn_end2end/test.prototxt --net ./output/faster_rcnn_end2end/brainwash_train/vgg16_faster_rcnn_iter_70000.caffemodel --imdb brainwash_val --cfg experiments/cfgs/brainwash.yml
+   $ python ./tools/test_net.py --gpu 0 --def ./models/brainwash/VGG16/faster_rcnn_end2end/test.prototxt --net ./output/faster_rcnn_end2end/brainwash_train/vgg16_faster_rcnn_iter_70000.caffemodel --imdb brainwash_val --cfg experiments/cfgs/brainwash.yml
 
-7. If you'd like to further finetune a trained model, you can try this. Note that in 'solver-2.txt' I'm using a different learning rate schedule.
+7. If you'd like to further finetune a trained model, you can try this. Note that in 'solver-2.prototxt' uses a different learning rate schedule from 'solver.prototxt'. The following example trains the model for additional 30,000 iterations, and writes the output to ./output/faster_rcnn_end2end/brainwash_train/brainwash_vgg16_finetune_iter_xxxx.caffemodel'.
 
-   $ time ./tools/train_net.py --gpu 0 --solver ./models/brainwash/VGG16/faster_rcnn_end2end/solver-2.prototxt --weights ./output/faster_rcnn_end2end/brainwash_train.bak/vgg16_faster_rcnn_iter_70000.caffemodel --imdb brainwash_train --iters 30000 --cfg experiments/cfgs/brainwash.yml 2>&1 | tee -a ./experiments/logs/brainwash-2.log
+   $ time python ./tools/train_net.py --gpu 0 --solver ./models/brainwash/VGG16/faster_rcnn_end2end/solver-2.prototxt --weights ./output/faster_rcnn_end2end/brainwash_train/brainwash_vgg16_iter_70000.caffemodel --imdb brainwash_train --iters 30000 --cfg experiments/cfgs/brainwash.yml 2>&1 | tee -a ./experiments/logs/brainwash-2.log
 
 8. To deploy the trained model onto Jetson TX2, you mainly need the trained caffemodel snapshot: './output/faster_rcnn_end2end/brainwash_train/brainwash_vgg16_finetune_iter_30000.caffemodel'
 
