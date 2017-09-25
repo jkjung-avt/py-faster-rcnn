@@ -12,5 +12,5 @@ weight_decay: 0.0005
 # function
 snapshot: 0
 # We still use the snapshot prefix, though
-snapshot_prefix: "brainwash_googlenet"
+snapshot_prefix: "voc2007_googlenet"
 iter_size: 2
