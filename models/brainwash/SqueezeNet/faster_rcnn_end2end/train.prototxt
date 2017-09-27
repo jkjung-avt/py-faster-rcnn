@@ -614,7 +614,8 @@ layer {
   convolution_param {
     num_output: 256
     kernel_size: 3 pad: 1 stride: 1
-    weight_filler { type: "gaussian" std: 0.01 }
+    ### Modified by JK
+    weight_filler { type: "gaussian" std: 0.001 }
     bias_filler { type: "constant" value: 0 }
   }
 }
@@ -677,7 +678,8 @@ layer {
   convolution_param {
     num_output: 18   # 2(bg/fg) * 9(anchors)
     kernel_size: 1 pad: 0 stride: 1
-    weight_filler { type: "gaussian" std: 0.01 }
+    ### Modified by JK
+    weight_filler { type: "gaussian" std: 0.001 }
     bias_filler { type: "constant" value: 0 }
   }
 }
@@ -691,7 +693,8 @@ layer {
   convolution_param {
     num_output: 36   # 4 * 9(anchors)
     kernel_size: 1 pad: 0 stride: 1
-    weight_filler { type: "gaussian" std: 0.01 }
+    ### Modified by JK
+    weight_filler { type: "gaussian" std: 0.001 }
     bias_filler { type: "constant" value: 0 }
   }
 }
@@ -805,45 +808,47 @@ layer {
 #========= RCNN ============
 
 layer {
-  name: "roi_pool_conv5"
+  #name: "roi_pool_conv5"
+  name: "roi_pool9"
   type: "ROIPooling"
   #bottom: "conv5"
   bottom: "fire9/concat"
   bottom: "rois"
-  top: "roi_pool_conv5"
+  #top: "roi_pool_conv5"
+  top: "roi_pool9"
   roi_pooling_param {
-    pooled_w: 6
-    pooled_h: 6
+    pooled_w: 13
+    pooled_h: 13
     spatial_scale: 0.0625 # 1/16
   }
 }
-layer {
-  name: "fc6"
-  type: "InnerProduct"
-  bottom: "roi_pool_conv5"
-  top: "fc6"
-  param { lr_mult: 1.0 }
-  param { lr_mult: 2.0 }
-  inner_product_param {
-    num_output: 4096
-  }
-}
-layer {
-  name: "relu6"
-  type: "ReLU"
-  bottom: "fc6"
-  top: "fc6"
-}
-layer {
-  name: "drop6"
-  type: "Dropout"
-  bottom: "fc6"
-  top: "fc6"
-  dropout_param {
-    dropout_ratio: 0.5
-    scale_train: false
-  }
-}
+#layer {
+#  name: "fc6"
+#  type: "InnerProduct"
+#  bottom: "roi_pool_conv5"
+#  top: "fc6"
+#  param { lr_mult: 1.0 }
+#  param { lr_mult: 2.0 }
+#  inner_product_param {
+#    num_output: 4096
+#  }
+#}
+#layer {
+#  name: "relu6"
+#  type: "ReLU"
+#  bottom: "fc6"
+#  top: "fc6"
+#}
+#layer {
+#  name: "drop6"
+#  type: "Dropout"
+#  bottom: "fc6"
+#  top: "fc6"
+#  dropout_param {
+#    dropout_ratio: 0.5
+#    scale_train: false
+#  }
+#}
 #layer {
 #  name: "fc7"
 #  type: "InnerProduct"
@@ -871,11 +876,36 @@ layer {
 #    scale_train: false
 #  }
 #}
+
+layer {
+  name: "conv10"
+  type: "Convolution"
+  bottom: "roi_pool9"
+  top: "conv10"
+  param { lr_mult: 1.0 }
+  param { lr_mult: 1.0 }
+  convolution_param {
+    num_output: 1000
+    kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+      mean: 0.0
+      std: 0.01
+    }
+  }
+}
+layer {
+  name: "relu/conv10"
+  type: "ReLU"
+  bottom: "conv10"
+  top: "conv10"
+}
+
 layer {
   name: "cls_score"
   type: "InnerProduct"
   #bottom: "fc7"
-  bottom: "fc6"
+  bottom: "conv10"
   top: "cls_score"
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
@@ -883,7 +913,8 @@ layer {
     num_output: 2
     weight_filler {
       type: "gaussian"
-      std: 0.01
+      ### modified by JK
+      std: 0.0001
     }
     bias_filler {
       type: "constant"
@@ -895,7 +926,7 @@ layer {
   name: "bbox_pred"
   type: "InnerProduct"
   #bottom: "fc7"
-  bottom: "fc6"
+  bottom: "conv10"
   top: "bbox_pred"
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
@@ -903,7 +934,8 @@ layer {
     num_output: 8
     weight_filler {
       type: "gaussian"
-      std: 0.001
+      ### modified by JK
+      std: 0.00001
     }
     bias_filler {
       type: "constant"
@@ -918,7 +950,8 @@ layer {
   bottom: "labels"
   propagate_down: 1
   propagate_down: 0
-  top: "cls_loss"
+  #top: "cls_loss"
+  top: "loss_cls"
   loss_weight: 1
   loss_param {
     ignore_label: -1
@@ -932,6 +965,7 @@ layer {
   bottom: "bbox_targets"
   bottom: 'bbox_inside_weights'
   bottom: 'bbox_outside_weights'
-  top: "bbox_loss"
+  #top: "bbox_loss"
+  top: "loss_bbox"
   loss_weight: 1
 }
