@@ -12,6 +12,7 @@ __sets = {}
 from datasets.pascal_voc import pascal_voc
 from datasets.coco import coco
 from datasets.brainwash import brainwash
+from datasets.fisheries import fisheries
 import numpy as np
 import os.path as osp
 
@@ -39,6 +40,12 @@ brainwash_devkit_path = osp.join(frcn_root, 'data/Brainwash_detectnet')
 for split in ['train', 'val']:
     name = 'brainwash_{}'.format(split)
     __sets[name] = (lambda split=split: brainwash(split, brainwash_devkit_path))
+
+# Set up fisheries_<split>
+fisheries_devkit_path = osp.join(frcn_root, 'data/Kaggle_Fisheries')
+for split in ['train', 'val']:
+    name = 'fisheries_{}'.format(split)
+    __sets[name] = (lambda split=split: fisheries(split, fisheries_devkit_path))
 
 def get_imdb(name):
     """Get an imdb (image database) by name."""
