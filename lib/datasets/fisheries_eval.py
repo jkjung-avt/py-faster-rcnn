@@ -90,7 +90,7 @@ def fisheries_eval(detpath, annodir, imgsdir, classname, cachedir,
         os.mkdir(cachedir)
     cachefile = os.path.join(cachedir, 'annots.pkl')
     # read list of images
-    imagenames = [f for f in os.listdir(imgsdir) if f.endswith('.png')]
+    imagenames = [f for f in os.listdir(imgsdir) if f.endswith('.jpg')]
     labelnames = [os.path.splitext(x)[0]+'.txt' for x in imagenames]
 
     if not os.path.isfile(cachefile):
