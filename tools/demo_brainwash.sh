@@ -96,7 +96,7 @@ def parse_args():
                         help='Use CPU mode (overrides --gpu)',
                         action='store_true')
     parser.add_argument('--net', dest='demo_net', help='Network to use [zf]',
-                        choices=['zf','vgg16'], default='zf')
+                        choices=['zf','vgg16','googlenet'], default='zf')
     args = parser.parse_args()
 
     return args
@@ -106,12 +106,15 @@ if __name__ == '__main__':
 
     args = parse_args()
 
-    if args.demo_net == 'vgg16':
-        prototxt = 'models/brainwash/VGG16/faster_rcnn_end2end/test.prototxt'
-        caffemodel = 'data/faster_rcnn_models/brainwash_vgg16_finetune_iter_30000.caffemodel'
-    elif args.demo_net == 'zf':
+    if args.demo_net == 'zf':
         prototxt = 'models/brainwash/ZF/faster_rcnn_end2end/test.prototxt'
-        caffemodel = 'data/faster_rcnn_models/brainwash_zf_finetune_iter_70000.caffemodel'
+        caffemodel = 'data/faster_rcnn_models/brainwash_zf_iter_70000.caffemodel'
+    elif args.demo_net == 'vgg16':
+        prototxt = 'models/brainwash/VGG16/faster_rcnn_end2end/test.prototxt'
+        caffemodel = 'data/faster_rcnn_models/brainwash_vgg16_iter_70000.caffemodel'
+    elif args.demo_net == 'googlenet':
+        prototxt = 'models/brainwash/GoogLeNet/faster_rcnn_end2end/test.prototxt'
+        caffemodel = 'data/faster_rcnn_models/brainwash_googlenet_iter_90000.caffemodel'
     else:
         sys.exit('A valid network model has not been specified!')
 
