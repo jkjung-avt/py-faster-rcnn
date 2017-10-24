@@ -11,6 +11,7 @@ __sets = {}
 
 from datasets.pascal_voc import pascal_voc
 from datasets.coco import coco
+from datasets.vehicles import vehicles
 from datasets.brainwash import brainwash
 from datasets.fisheries import fisheries
 import numpy as np
@@ -46,6 +47,11 @@ fisheries_devkit_path = osp.join(frcn_root, 'data/Kaggle_Fisheries')
 for split in ['train', 'val']:
     name = 'fisheries_{}'.format(split)
     __sets[name] = (lambda split=split: fisheries(split, fisheries_devkit_path))
+
+# Set up vehicles_<split>
+for split in ['train', 'val']:
+    name = 'vehicles_{}'.format(split)
+    __sets[name] = (lambda split=split: vehicles(split))
 
 def get_imdb(name):
     """Get an imdb (image database) by name."""
