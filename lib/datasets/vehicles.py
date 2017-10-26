@@ -18,12 +18,15 @@ class vehicles(imdb):
         fname = osp.join(self._data_path, image_set + '.json')
         with open(fname, 'rb') as f:
             self._image_index = json.load(f)
-            self._classes = ['__background__']
+            self._classes = ['__background__', 'bicycle', 'car',
+                             'motorcycle', 'bus', 'train', 'truck', 'boat']
             for img in self._image_index:
                 for anno in img['annotations']:
-                    if anno['class'] not in self._classes:
-                        self._classes.append(anno['class'])
-            #print(self._classes)
+                    #if anno['class'] not in self._classes:
+                    #    self._classes.append(anno['class'])
+                    assert anno['class'] in self._classes, \
+                           'Unknown class "{}" in {}'.format(anno['class'], img)
+            #print(self.classes)
             print('Total number of classes: {}'.format(self.num_classes))
             self._class_to_ind = dict(zip(self.classes, range(self.num_classes)))
             print(self._class_to_ind)
@@ -31,10 +34,10 @@ class vehicles(imdb):
             self._comp_id = 'comp4'
             # Specific config options
             self.config = {'cleanup'  : False,
-                        'use_salt' : True,
-                        'top_k'    : 2000,
-                        'use_diff' : False,
-                        'rpn_file' : None}
+                           'use_salt' : True,
+                           'top_k'    : 2000,
+                           'use_diff' : False,
+                           'rpn_file' : None}
 
     def image_path_at(self, i):
         return self._image_index[i]['filename']
