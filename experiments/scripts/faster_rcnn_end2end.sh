@@ -40,9 +40,9 @@ case $DATASET in
     ;;
   vehicles)
     TRAIN_IMDB="vehicles_train"
-    TEST_IMDB="vehicles_val"
+    TEST_IMDB="vehicles_test"
     PT_DIR="vehicles"
-    ITERS=250000
+    ITERS=490000
     ;;
   *)
     echo "No dataset given"

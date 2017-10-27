@@ -49,7 +49,7 @@ for split in ['train', 'val']:
     __sets[name] = (lambda split=split: fisheries(split, fisheries_devkit_path))
 
 # Set up vehicles_<split>
-for split in ['train', 'val']:
+for split in ['train', 'test']:
     name = 'vehicles_{}'.format(split)
     __sets[name] = (lambda split=split: vehicles(split))
 
