@@ -40,7 +40,7 @@ case $DATASET in
     ;;
   vehicles)
     TRAIN_IMDB="vehicles_train"
-    TEST_IMDB="vehicles_test"
+    TEST_IMDB="vehicles_val"
     PT_DIR="vehicles"
     ITERS=250000
     ;;
