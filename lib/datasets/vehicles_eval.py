@@ -36,7 +36,7 @@ def vehicles_ap(rec, prec, use_07_metric=False):
         # correct AP calculation
         # first append sentinel values at the end
         mrec = np.concatenate(([0.], rec, [1.]))
-        mpre = np.concatenate(([0.], prec,[0.]))
+        mpre = np.concatenate(([0.], prec, [0.]))
 
         # compute the precision envelope
         for i in range(mpre.size - 1, 0, -1):
@@ -50,8 +50,8 @@ def vehicles_ap(rec, prec, use_07_metric=False):
         ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
 
-
-def vehicles_eval(detpath,  classname, image_list, cachedir, ovthresh=0.5):
+def vehicles_eval(detpath, classname, image_list, cachedir,
+                  ovthresh=0.5, use_07_metric=False):
     """rec, prec, ap = vehicles_eval(detpath, classname, cachedir,[ovthresh])
 
     Top level function that does the PASCAL VOC evaluation.
@@ -72,7 +72,6 @@ def vehicles_eval(detpath,  classname, image_list, cachedir, ovthresh=0.5):
     if not os.path.isfile(cachefile):
         # load annots
         recs = {}
-
         for i, img in enumerate(image_list):
             recs[img['filename']] = parse_rec(img['annotations'])
             if i % 100 == 0:
@@ -86,19 +85,19 @@ def vehicles_eval(detpath,  classname, image_list, cachedir, ovthresh=0.5):
         # load
         with open(cachefile, 'r') as f:
             recs = cPickle.load(f)
-    
+
     # extract gt objects for this class
     class_recs = {}
     npos = 0
     for img in image_list:
         R = [obj for obj in recs[img['filename']] if obj['name'] == classname]
-    bbox = np.array([x['bbox'] for x in R])
-    difficult = np.array([x['difficult'] for x in R]).astype(np.bool)
-    det = [False] * len(R)
-    npos = npos + sum(~difficult)
-    class_recs[img['filename']] = {'bbox': bbox,
-                             'difficult': difficult,
-                             'det': det}
+        bbox = np.array([x['bbox'] for x in R])
+        difficult = np.array([x['difficult'] for x in R]).astype(np.bool)
+        det = [False] * len(R)
+        npos = npos + sum(~difficult)
+        class_recs[img['filename']] = {'bbox': bbox,
+                                       'difficult': difficult,
+                                       'det': det}
 
     # read dets
     detfile = detpath.format(classname)
@@ -139,8 +138,8 @@ def vehicles_eval(detpath,  classname, image_list, cachedir, ovthresh=0.5):
 
             # union
             uni = ((bb[2] - bb[0] + 1.) * (bb[3] - bb[1] + 1.) +
-                    (BBGT[:, 2] - BBGT[:, 0] + 1.) *
-                    (BBGT[:, 3] - BBGT[:, 1] + 1.) - inters)
+                   (BBGT[:, 2] - BBGT[:, 0] + 1.) *
+                   (BBGT[:, 3] - BBGT[:, 1] + 1.) - inters)
 
             overlaps = inters / uni
             ovmax = np.max(overlaps)

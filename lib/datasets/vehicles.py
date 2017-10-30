@@ -1,6 +1,7 @@
 from datasets.imdb import imdb
 from fast_rcnn.config import cfg
 import os
+import errno
 import os.path as osp
 import json
 import uuid
@@ -13,7 +14,7 @@ from vehicles_eval import vehicles_eval
 class vehicles(imdb):
     def __init__(self, image_set):
         imdb.__init__(self, 'vehicles_' + image_set)
-        self._image_set = image_set
+        self._image_set = image_set  # 'train' or 'test'
         self._data_path = osp.join(cfg.DATA_DIR, 'vehicles')
         fname = osp.join(self._data_path, image_set + '.json')
         with open(fname, 'rb') as f:
@@ -115,14 +116,14 @@ class vehicles(imdb):
     def _get_vehicles_results_file_template(self):
         filename = self._get_comp_id() + '_det_' + self._image_set + '_{:s}.txt'
         try:
-            os.mkdir(self._devkit_path + '/results')
+            os.mkdir(self._data_path + '/results')
         except OSError as e:
             if e.errno == errno.EEXIST:
                 pass
             else:
                 raise e
         path = os.path.join(
-            self._devkit_path,
+            self._data_path,
             'results',
             filename)
         return path
@@ -141,7 +142,7 @@ class vehicles(imdb):
                     # the VOCdevkit expects 1-based indices
                     for k in xrange(dets.shape[0]):
                         f.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.
-                                format(index, dets[k, -1],
+                                format(index['filename'], dets[k, -1],
                                        dets[k, 0] + 1, dets[k, 1] + 1,
                                        dets[k, 2] + 1, dets[k, 3] + 1))
 
@@ -162,7 +163,7 @@ class vehicles(imdb):
     
 
     def _do_python_eval(self, output_dir = 'output'):
-        cachedir = os.path.join(self._devkit_path, 'annotations_cache')
+        cachedir = os.path.join(self._data_path, 'annotations_cache')
         aps = []
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
