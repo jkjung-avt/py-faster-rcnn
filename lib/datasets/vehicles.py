@@ -20,7 +20,7 @@ class vehicles(imdb):
         with open(fname, 'rb') as f:
             self._image_index = json.load(f)
             self._classes = ['__background__', 'bicycle', 'car',
-                             'motorcycle', 'bus', 'train', 'truck', 'boat']
+                             'motorcycle', 'bus', 'train', 'truck']
             for img in self._image_index:
                 for anno in img['annotations']:
                     #if anno['class'] not in self._classes:
