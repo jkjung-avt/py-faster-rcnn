@@ -5,5 +5,8 @@ lib/pycocotools/_mask.c
 lib/pycocotools/_mask.so
 data/*.tgz
 data/faster_rcnn_models
+data/brainwash
+data/coco
+data/vehicles
 experiments/logs
 output
