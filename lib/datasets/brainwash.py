@@ -11,6 +11,7 @@
 import os
 import errno
 from datasets.imdb import imdb
+from fast_rcnn.config import cfg
 import xml.dom.minidom as minidom
 import numpy as np
 import scipy.sparse
@@ -22,11 +23,11 @@ import uuid
 from brainwash_eval import brainwash_eval
 
 class brainwash(imdb):
-    def __init__(self, image_set, devkit_path):
+    def __init__(self, image_set):
         imdb.__init__(self, 'brainwash_' + image_set)
         self._image_set = image_set  # 'train' or 'val'
-        self._devkit_path = devkit_path
-        self._data_path = os.path.join(self._devkit_path, 'detectnet_640x480')
+        self._devkit_path = os.path.join(cfg.DATA_DIR, 'brainwash')
+        self._data_path = os.path.join(cfg.DATA_DIR, 'brainwash/detectnet_640x480')
         self._image_dir = os.path.join(self._data_path, image_set, 'images')
         self._label_dir = os.path.join(self._data_path, image_set, 'labels')
         self._classes = ('__background__', # always index 0

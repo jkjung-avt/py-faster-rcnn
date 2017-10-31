@@ -21,6 +21,7 @@ array=( $@ )
 len=${#array[@]}
 EXTRA_ARGS=${array[@]:3:$len}
 EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
+CFG_FILE="experiments/cfgs/faster_rcnn_end2end.yml"
 
 case $DATASET in
   pascal_voc)
@@ -37,6 +38,13 @@ case $DATASET in
     TEST_IMDB="coco_2014_minival"
     PT_DIR="coco"
     ITERS=490000
+    ;;
+  brainwash)
+    TRAIN_IMDB="brainwash_train"
+    TEST_IMDB="brainwash_test"
+    PT_DIR="brainwash"
+    ITERS=90000
+    CFG_FILE="experiments/cfgs/brainwash.yml"
     ;;
   vehicles)
     TRAIN_IMDB="vehicles_train"
@@ -59,7 +67,7 @@ time ./tools/train_net.py --gpu ${GPU_ID} \
   --weights data/imagenet_models/${NET}.v2.caffemodel \
   --imdb ${TRAIN_IMDB} \
   --iters ${ITERS} \
-  --cfg experiments/cfgs/faster_rcnn_end2end.yml \
+  --cfg ${CONFIG_FILE} \
   ${EXTRA_ARGS}
 
 set +x
@@ -70,5 +78,5 @@ time ./tools/test_net.py --gpu ${GPU_ID} \
   --def models/${PT_DIR}/${NET}/faster_rcnn_end2end/test.prototxt \
   --net ${NET_FINAL} \
   --imdb ${TEST_IMDB} \
-  --cfg experiments/cfgs/faster_rcnn_end2end.yml \
+  --cfg ${CONFIG_FILE} \
   ${EXTRA_ARGS}
