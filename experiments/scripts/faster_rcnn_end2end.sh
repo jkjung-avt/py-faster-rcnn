@@ -41,7 +41,7 @@ case $DATASET in
     ;;
   brainwash)
     TRAIN_IMDB="brainwash_train"
-    TEST_IMDB="brainwash_test"
+    TEST_IMDB="brainwash_val"
     PT_DIR="brainwash"
     ITERS=90000
     CFG_FILE="experiments/cfgs/brainwash.yml"
@@ -67,7 +67,7 @@ time ./tools/train_net.py --gpu ${GPU_ID} \
   --weights data/imagenet_models/${NET}.v2.caffemodel \
   --imdb ${TRAIN_IMDB} \
   --iters ${ITERS} \
-  --cfg ${CONFIG_FILE} \
+  --cfg ${CFG_FILE} \
   ${EXTRA_ARGS}
 
 set +x
@@ -78,5 +78,5 @@ time ./tools/test_net.py --gpu ${GPU_ID} \
   --def models/${PT_DIR}/${NET}/faster_rcnn_end2end/test.prototxt \
   --net ${NET_FINAL} \
   --imdb ${TEST_IMDB} \
-  --cfg ${CONFIG_FILE} \
+  --cfg ${CFG_FILE} \
   ${EXTRA_ARGS}
