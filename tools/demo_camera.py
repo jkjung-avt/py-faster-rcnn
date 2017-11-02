@@ -31,8 +31,9 @@ windowName = "HeadDetection"
 def vis_detections(im, class_name, dets, thresh=0.5):
     """Draw detected bounding boxes."""
     inds = np.where(dets[:, -1] >= thresh)[0]
+    scores = []
     if len(inds) == 0:
-        return 0
+        return 0, scores
 
     for i in inds:
         bbox = dets[i, :4]
@@ -42,7 +43,8 @@ def vis_detections(im, class_name, dets, thresh=0.5):
         #        '{:s} {:.3f}'.format(class_name, score),
         #        bbox=dict(facecolor='blue', alpha=0.5),
         #        fontsize=14, color='white')
-    return len(inds)
+        scores.append(score)
+    return len(inds), scores
 
 def demo(net, im):
     """Detect object classes in an image using pre-computed object proposals."""
@@ -53,7 +55,7 @@ def demo(net, im):
 
     # Visualize detections for each class
     CONF_THRESH = 0.8
-    NMS_THRESH = 0.3
+    NMS_THRESH = 0.1
     for cls_ind, cls in enumerate(CLASSES[1:2]): # show result of class 1 only
         cls_ind += 1 # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
@@ -62,8 +64,9 @@ def demo(net, im):
                           cls_scores[:, np.newaxis])).astype(np.float32)
         keep = nms(dets, NMS_THRESH)
         dets = dets[keep, :]
-    found = vis_detections(im, cls, dets, thresh=CONF_THRESH)
-    print ('Detection took {:.3f}s and found {:d} objects').format(timer.total_time, found)
+    found, scores = vis_detections(im, cls, dets, thresh=CONF_THRESH)
+    min_score = 0 if len(scores) == 0 else min(scores)
+    print ('Detection took {:.3f}s and found {:d} objects, min_score = {:.3f}').format(timer.total_time, found, min_score)
 
 def parse_args():
     """Parse input arguments."""
@@ -125,10 +128,10 @@ if __name__ == '__main__':
 
     if args.demo_net == 'zf':
         prototxt = 'models/brainwash/ZF/faster_rcnn_end2end/test.prototxt'
-        caffemodel = 'data/faster_rcnn_models/brainwash_zf_iter_70000.caffemodel'
+        caffemodel = 'data/faster_rcnn_models/brainwash_zf_iter_90000.caffemodel'
     elif args.demo_net == 'vgg16':
         prototxt = 'models/brainwash/VGG16/faster_rcnn_end2end/test.prototxt'
-        caffemodel = 'data/faster_rcnn_models/brainwash_vgg16_iter_70000.caffemodel'
+        caffemodel = 'data/faster_rcnn_models/brainwash_vgg16_iter_90000.caffemodel'
     elif args.demo_net == 'googlenet':
         prototxt = 'models/brainwash/GoogLeNet/faster_rcnn_end2end/test.prototxt'
         caffemodel = 'data/faster_rcnn_models/brainwash_googlenet_iter_90000.caffemodel'
