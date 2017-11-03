@@ -62,17 +62,18 @@ def vis_detections(im, class_name, dets, thresh=0.5):
 def vis_detections_cv(im_name, im, dets_all, thresh=0.5):
     """Draw detected bounding boxes."""
     windowName = 'demo_vehicles'
-    inds = np.where(dets[:, -1] >= thresh)[0]
+    inds = np.where(dets_all[:, -1] >= thresh)[0]
     for i in inds:
-        bbox = dets[i, :4]
-        score = dets[i, -1]
+        bbox = dets_all[i, :4]
+        score = dets_all[i, -1]
         cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0,0,255), 2)
     cv2.namedWindow(windowName, cv2.WINDOW_NORMAL)
+    height, width, colors = im.shape
     cv2.resizeWindow(windowName, width, height)
     cv2.moveWindow(windowName, 0, 0)
     cv2.setWindowTitle(windowName, im_name)
     cv2.imshow(windowName, im)
-    key = cv2.waitKey(10)
+    key = cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 def demo(net, image_name):
@@ -87,11 +88,9 @@ def demo(net, image_name):
     timer.tic()
     scores, boxes = im_detect(net, im)
     timer.toc()
-    print ('Detection took {:.3f}s for '
-           '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
     dets_list = []
-    CONF_THRESH = 0.8
+    CONF_THRESH = 0.6
     NMS_THRESH = 0.3
     for cls_ind, cls in enumerate(CLASSES[1:]):
         cls_ind += 1 # because we skipped background
@@ -103,6 +102,8 @@ def demo(net, image_name):
         dets = dets[keep, :]
         dets_list.append(dets)
     dets_all = np.concatenate(dets_list, axis=0)
+    inds = np.where(dets_all[:, -1] >= CONF_THRESH)[0]
+    print('Detection took {:.3f}s and found {:d} objects'.format(timer.total_time, len(inds)))
     vis_detections_cv(im_name, im, dets_all, thresh=CONF_THRESH)
 
 def parse_args():
