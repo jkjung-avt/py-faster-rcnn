@@ -60,14 +60,14 @@ def vis_detections(im, class_name, dets, thresh=0.5):
     plt.tight_layout()
     plt.draw()
 
-def vis_detections_cv(im_name, im, dets_all, thresh=0.5):
+def vis_detections_cv(im_name, im, dets_all, cls_all, thresh=0.5):
     """Draw detected bounding boxes."""
     windowName = 'demo_vehicles'
-    inds = np.where(dets_all[:, -2] >= thresh)[0]
+    inds = np.where(dets_all[:, -1] >= thresh)[0]
     for i in inds:
         bbox = dets_all[i, :4]
-        score = dets_all[i, -2]
-        cls = int(dets_all[i, -1])
+        score = dets_all[i, -1]
+        cls = cls_all[i]
         cv2.rectangle(im, (bbox[0],bbox[1]), (bbox[2],bbox[3]), COLORS[cls], 2)
         txt = '{:s} {:.3f}'.format(CLASSES[cls], score)
         cv2.putText(im, txt, (int(bbox[0])+1,int(bbox[1])-2), cv2.FONT_HERSHEY_PLAIN, 1.0, (32,32,32), 4, cv2.LINE_AA)
@@ -97,25 +97,25 @@ def demo(net, image_name):
     #print('im_detect(): output {} boxes'.format(boxes.shape[0]))
     timer.tic()
     dets_list = []
+    cls_list = []
     CONF_THRESH = 0.7
     NMS_THRESH = 0.2
     for cls_ind, cls in enumerate(CLASSES[1:]):
         cls_ind += 1 # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
         cls_scores = scores[:, cls_ind]
-        cls_indice = np.full(cls_scores.shape, cls_ind, dtype=np.float32)
         dets = np.hstack((cls_boxes,
                           cls_scores[:, np.newaxis])).astype(np.float32)
         #keep = [i for i in range(dets.shape[0])]
         keep = soft_nms(dets=dets, Nt=NMS_THRESH, method=1)
-        dets = np.hstack((dets, cls_indice[:, np.newaxis]))
         dets = dets[keep, :]
         dets_list.append(dets)
+        cls_list.extend([cls_ind] * len(keep))
     dets_all = np.concatenate(dets_list, axis=0)
-    inds = np.where(dets_all[:, -2] >= CONF_THRESH)[0]
+    inds = np.where(dets_all[:, -1] >= CONF_THRESH)[0]
     nms_time = timer.toc(average=False)
     print('Detection took {:.3f}s and found {:d} objects'.format(timer.total_time, len(inds)))
-    vis_detections_cv(im_name, im, dets_all, thresh=CONF_THRESH)
+    vis_detections_cv(im_name, im, dets_all, cls_list, thresh=CONF_THRESH)
 
 def parse_args():
     """Parse input arguments."""
@@ -143,7 +143,8 @@ if __name__ == '__main__':
         prototxt = 'models/vehicles/VGG16/faster_rcnn_end2end/test.prototxt'
         caffemodel = 'data/faster_rcnn_models/vehicles_vgg16_iter_490000.caffemodel'
     elif args.demo_net == 'googlenet':
-        sys.exit('A valid network model has not been specified!')
+        prototxt = 'models/vehicles/GoogLeNet/faster_rcnn_end2end/test.prototxt'
+        caffemodel = 'data/faster_rcnn_models/vehicles_googlenet_iter_490000.caffemodel'
     else:
         sys.exit('A valid network model has not been specified!')
 
