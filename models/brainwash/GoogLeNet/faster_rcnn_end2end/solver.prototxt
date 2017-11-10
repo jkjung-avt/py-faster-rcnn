@@ -1,5 +1,5 @@
 train_net: "models/brainwash/GoogLeNet/faster_rcnn_end2end/train.prototxt"
-base_lr: 0.001
+base_lr: 0.005
 lr_policy: "step"
 gamma: 0.1
 stepsize: 30000
@@ -7,7 +7,7 @@ display: 20
 average_loss: 100
 # iter_size: 1
 momentum: 0.9
-weight_decay: 0.0005
+weight_decay: 0.0001
 # We disable standard caffe solver snapshotting and implement our own snapshot
 # function
 snapshot: 0
