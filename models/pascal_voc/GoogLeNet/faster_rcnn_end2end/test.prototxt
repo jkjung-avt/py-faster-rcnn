@@ -78,14 +78,11 @@ layer {
   bottom: "pool1/norm1"
   top: "conv2/3x3_reduce"
   param {
-    #lr_mult: 1
-    lr_mult: 0
-    #decay_mult: 1
-    decay_mult: 0
+    lr_mult: 1
+    decay_mult: 1
   }
   param {
-    #lr_mult: 2
-    lr_mult: 0
+    lr_mult: 2
     decay_mult: 0
   }
   convolution_param {
@@ -112,14 +109,11 @@ layer {
   bottom: "conv2/3x3_reduce"
   top: "conv2/3x3"
   param {
-    #lr_mult: 1
-    lr_mult: 0
-    #decay_mult: 1
-    decay_mult: 0
+    lr_mult: 1
+    decay_mult: 1
   }
   param {
-    #lr_mult: 2
-    lr_mult: 0
+    lr_mult: 2
     decay_mult: 0
   }
   convolution_param {
@@ -2500,7 +2494,7 @@ layer {
   name: "bbox_pred"
   type: "InnerProduct"
   #bottom: "fc7"
-  bottom: "inception_5b/output"
+  bottom: "pool5/7x7_s1"
   top: "bbox_pred"
   param {
     lr_mult: 1
