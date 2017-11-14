@@ -2,45 +2,71 @@
 #
 #
 
-import numpy as np
 import os, sys, datetime
-import _init_paths
+import os.path as osp
+
+this_dir = osp.dirname(__file__)
+# Add caffe and lib to PYTHONPATH
+caffe_path = osp.join(this_dir, '..', '..', 'caffe-fast-rcnn', 'python')
+if caffe_path not in sys.path: sys.path.insert(0, caffe_path)
+lib_path = osp.join(this_dir, '..', '..', 'lib')
+if lib_path not in sys.path: sys.path.insert(0, lib_path)
+
+import numpy as np
 from fast_rcnn.config import cfg
-#from fast_rcnn.test import im_detect
+from fast_rcnn.test import im_detect
 from fast_rcnn.nms_wrapper import soft_nms
 import cv2
 import caffe
 
 # If 2 detections in neighboring images overlap over this amount, they
 # are considered as 'same detection in different image frames'.
-OVERLAP_THRESHOLD = 0.8
+OVERLAP_THRESHOLD = 0.5
 
 # If 2 image crops have similarity scores over this value, they are
 # considered as 'sam object in different image crops'. This threshold
 # is needed due to occlusion, fast lighting condition changes, rain, etc.
-SIMILARITY_THRESHOLD = 0.7
+SIMILARITY_THRESHOLD = 0.5
 
 # If a vehicle is present over this percentage of recent image frames,
 # it is considered as a stationary vehicle.
 # (stationary -> alarming -> violation)
-PRESENCE_THRESHOLD = 0.7
+PRESENCE_THRESHOLD = 0.5
 
 CLASSES = ('__background__', 'bicycle', 'car', 'motorcycle', 'bus', 'train', 'truck')
-CLASSES_FOR_DETECTION = ('motorcycle', 'bus', 'truck')
+CLASSES_FOR_DETECTION = ('car', 'bus', 'truck')
 
-def im_detect(net, img):
-    """
-    For testing only.
-    """
-    boxes = np.zeros((2, 4*7), dtype=np.float32)
-    boxes[0, 8:12] = np.array([100,100,300,300])
-    boxes[1, 8:12] = np.array([800,800,1200,1000])
-    scores = np.zeros((2, 7), dtype=np.float32)
-    scores[0, 2] = 0.99
-    scores[0, 0] = 0.01
-    scores[1, 2] = 0.99
-    scores[1, 0] = 0.01
-    return scores, boxes
+#def im_detect(net, img):
+#    """
+#    For testing only.
+#    """
+#    import random
+#    scores = np.zeros((2, 7), dtype=np.float32)
+#    boxes = np.zeros((2, 4*7), dtype=np.float32)
+#    # car #1
+#    scores[0, 2] = 0.99
+#    scores[0, 0] = 0.01
+#    boxes[0, 8:12] = np.array([100,100,300,300])
+#    # car #2
+#    scores[1, 2] = 0.99
+#    scores[1, 0] = 0.01
+#    boxes[1, 8:12] = np.array([800,800,1200,1000])
+#    # bus #1
+#    if random.random() < 0.8:
+#        scores[1, 4] = 0.99
+#        scores[1, 0] = 0.01
+#        boxes[1, 16:20] = np.array([300,500,900,700])
+#    # bus #2
+#    if random.random() < 0.7:
+#        scores[1, 4] = 0.99
+#        scores[1, 0] = 0.01
+#        boxes[1, 16:20] = np.array([1300,500,1900,700])
+#    # truck #1
+#    if random.random() < 0.5:
+#        scores[1, 6] = 0.99
+#        scores[1, 0] = 0.01
+#        boxes[1, 24:28] = np.array([200,600,800,900])
+#    return scores, boxes
 
 def calculate_iou(det1, det2):
     """
@@ -64,11 +90,12 @@ def calculate_similarity(crop1, crop2):
     Assumes the 2 crops are of the same dimension/size and in (H, W, C)
     format.
     """
-    return 1.0
+    assert crop1.shape == crop2.shape
+    return cv2.matchTemplate(crop1, crop2, cv2.TM_CCOEFF_NORMED)[0,0]
 
 class VehicleDetected(object):
     def __init__(self, timestamp, det):
-        slef.timestamp = timestamp
+        self.timestamp = timestamp
         self.det = det  # detection box (x/y coordinates and score)
 
 class IllegalParkingDetector(object):
@@ -82,10 +109,10 @@ class IllegalParkingDetector(object):
                      location for longer than VIOLATION_INTERVAL.
     """
     def __init__(self, net):
-        self.DETECTION_INTERVAL = datetime.timedelta(0, 10, 0)  # 10 seconds
-        self.ALARMING_INTERVAL  = datetime.timedelta(1,  0, 0)  # 1 minute
+        self.DETECTION_INTERVAL = datetime.timedelta(0, 10)   # 10 seconds
+        self.ALARMING_INTERVAL  = datetime.timedelta(0, 60)   # 1 minute
         self.ALARMING_PERIOD    = 6 # ALARMING_INTERVAL = 6 * DETECTION_INTERVAL
-        self.VIOLATION_INTERVAL = datetime.timedelta(5,  0, 0)  # 5 minutes
+        self.VIOLATION_INTERVAL = datetime.timedelta(0, 300)  # 5 minutes
         self.PRESENCE_FRAMES    = int(self.ALARMING_PERIOD * PRESENCE_THRESHOLD)
         self.img_list = []        # list of (img, timestamp, dte) tuples
         self.alarming_list = []   # list of 'VehicleDetected' objects
@@ -95,7 +122,7 @@ class IllegalParkingDetector(object):
 
     def detect(self, net, img):
         """Detect objects in an image."""
-        scores, boxes = im_detect(self.net, im)
+        scores, boxes = im_detect(self.net, img)
         dets_list = []
         CONF_THRESH = 0.7
         NMS_THRESH = 0.2
@@ -110,7 +137,7 @@ class IllegalParkingDetector(object):
                 inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
                 dets_list.append(dets[inds])
         dets_all = np.concatenate(dets_list, axis=0)
-        print('Detection found {:d} objects'.format(len(dets_all)))
+        print('Detection found {:d} vehicles'.format(len(dets_all)))
         return dets_all
 
     def new_image(self, img):
@@ -122,17 +149,17 @@ class IllegalParkingDetector(object):
         image frame accordingly.
         """
         curr_time = datetime.datetime.now()
-        if len(img_list) > 0:
-            prev_time = img_list[-1][1]
-            if prev_time - curr_time < self.DETECTION_INTERVAL:
+        if len(self.img_list) > 0:
+            prev_time = self.img_list[-1][1]
+            if curr_time - prev_time < self.DETECTION_INTERVAL:
                 return  # has not reached the next detection period
-            assert(prev_time - curr_time < self.DETECTION_INTERVAL * 2)
-        dets = self.detect(img)
+            assert curr_time - prev_time < (self.DETECTION_INTERVAL * 2)
+        dets = self.detect(self.net, img)
         self.img_list.append((img, curr_time, dets))
         if len(self.img_list) < self.ALARMING_PERIOD:
             return  # need to accumulate a few more images
         elif len(self.img_list) > self.ALARMING_PERIOD:
-            self.img_list.remove(self.img_list[0])
+            del self.img_list[0]
             assert(len(self.img_list) == self.ALARMING_PERIOD)
 
         self.update_vehicleslist()
@@ -146,7 +173,7 @@ class IllegalParkingDetector(object):
         found = False
         index = 0
         for i, existing in enumerate(new_list):
-            if calculate_iou(det, exsiting) >= OVERLAP_THRESHOLD:
+            if calculate_iou(det, existing) >= OVERLAP_THRESHOLD:
                 found = True
                 index = i
                 break
@@ -161,13 +188,14 @@ class IllegalParkingDetector(object):
         above PRESENCE_THRESHOLD.
         """
         assert len(crop_list) == self.ALARMING_PERIOD
-        for c1 in crop_list:
+        for i, c1 in enumerate(crop_list):
             mscores = []
             count = 0
-            for c2 in crop_list:
-                if c1 != c2:
-                    mscores.append(calculate_similarity(c1, c2))
-                    if mscores[-1] >= SIMILARITY_THRESHOLD:
+            for j, c2 in enumerate(crop_list):
+                if i != j:
+                    score = calculate_similarity(c1, c2)
+                    mscores.append(score)
+                    if score >= SIMILARITY_THRESHOLD:
                         count += 1
             avg = sum(mscores) / float(len(mscores))
             if avg >= SIMILARITY_THRESHOLD and count >= self.PRESENCE_FRAMES:
@@ -186,8 +214,8 @@ class IllegalParkingDetector(object):
                 found, index = self.det_already_in_list(dets[j], new_list)
                 if found:
                     cnt_list[index] += 1
-                else
-                    new_list.append(det)
+                else:
+                    new_list.append(dets[j])
                     cnt_list.append(1)
         # Only keep boxes which appear more than PRESENCE_FRAMES times
         keep = np.where(np.array(cnt_list) >= self.PRESENCE_FRAMES)[0]
@@ -200,7 +228,12 @@ class IllegalParkingDetector(object):
         #         locations match to certain extent.
         tmp_list = []
         for det in det_list:
-            crop_list = [x[0][det[1]:det[3],det[0]:det[2],:] for x in self.img_list]
+            crop_list = []
+            for item in self.img_list:
+                img = item[0]
+                crop_list.append(img[int(det[1]):int(det[3]),
+                                     int(det[0]):int(det[2]),
+                                     :])
             if self.match_crops(crop_list): 
                 tmp_list.append(det)
         det_list = tmp_list
@@ -208,72 +241,101 @@ class IllegalParkingDetector(object):
         # Step 3: Check and update violation list.
         tmp_list = []
         for v in self.violation_list:
-            found, index = self.vehicle_in_list(v, det_list):
+            found, index = self.vehicle_in_list(v, det_list)
             if found:
-                det_list.remove(det_list(index))
+                del det_list[index]
                 tmp_list.append(v)
             else:
-                print('update_vehicleslist(): ({},{},{},{}) removed from violation list.'.format(v.det[0],v.det[1],v.det[2],v.det[3])
+                print('update_vehicleslist(): ({},{},{},{}) removed from violation list.'.format(v.det[0],v.det[1],v.det[2],v.det[3]))
         self.violation_list = tmp_list
 
         # Step 4: Update alarming list.
         tmp_list = []
         for v in self.alarming_list:
-            found, index = self.vehicle_in_list(v, det_list):
+            found, index = self.vehicle_in_list(v, det_list)
             if found:
-                det_list.remove(det_list(index))
+                del det_list[index]
                 curr_time = datetime.datetime.now()
-                if curr_time - v.timestamp >= self.VIOLATION_INTERVAL:
+                if curr_time - v.timestamp > self.VIOLATION_INTERVAL:
                     self.violation_list.append(v)
-                    print('update_vehicleslist(): ({},{},{},{}) moved from alarming to violation list.'.format(v.det[0],v.det[1],v.det[2],v.det[3])
+                    print('update_vehicleslist(): ({},{},{},{}) moved from alarming to violation list.'.format(v.det[0],v.det[1],v.det[2],v.det[3]))
                 else:
                     tmp_list.append(v)
             else:
-                print('update_vehicleslist(): ({},{},{},{}) removed from alarming list.'.format(v.det[0],v.det[1],v.det[2],v.det[3])
+                print('update_vehicleslist(): ({},{},{},{}) removed from alarming list.'.format(v.det[0],v.det[1],v.det[2],v.det[3]))
         self.alarming_list = tmp_list
 
         # Step 5: Out all remaining detections into alarming list.
         for det in det_list:
-            timestamp = datetime.datetime.now() - self.ALARMING_INERVAL
+            timestamp = datetime.datetime.now() - self.ALARMING_INTERVAL
             v = VehicleDetected(timestamp, det)
             self.alarming_list.append(v)
-            print('update_vehicleslist(): ({},{},{},{}) appended into alarming list.'.format(v.det[0],v.det[1],v.det[2],v.det[3])
+            print('update_vehicleslist(): ({},{},{},{}) appended into alarming list.'.format(v.det[0],v.det[1],v.det[2],v.det[3]))
+
+def open_cam_rtsp(uri, width, height):
+    gst_str = "rtspsrc location={} latency=50 ! rtph264depay ! h264parse ! omxh264dec ! nvvidconv ! video/x-raw, width=(int){}, height=(int){}, format=(string)BGRx ! videoconvert ! appsink".format(uri, width, height)
+    return cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
 
 # Testing code
 if __name__ == '__main__':
+    cfg.TEST.HAS_RPN = True  # Use RPN for proposals
+    cfg.TEST.MAX_SIZE = 1920
+    cfg.TEST.SCALES = (1080,)
+    cfg.TEST.RPN_POST_NMS_TOP_N = 300
+
+    caffe.set_mode_gpu()
+    net = caffe.Net('models/vehicles/GoogLeNet/faster_rcnn_end2end/test.prototxt', 'data/faster_rcnn_models/vehicles_googlenet_iter_490000.caffemodel', caffe.TEST)
+
     windowName = 'vehicles_test'
     cv2.namedWindow(windowName, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(windowName, 1920, 1080)
     cv2.moveWindow(windowName, 0, 0)
     cv2.setWindowTitle(windowName, "Testing IllegalParkingDetector")
+    cap = open_cam_rtsp('rtsp://10.130.16.240:5555/view.sdp', 1920, 1080)
+    if not cap.isOpened():
+        sys.exit("Failed to open camera!")
 
-    cnt = 1
-    ipd = IllegalParkingDetector(None)
+    #cnt = 0
+    ipd = IllegalParkingDetector(net)
     while True:
-        filename = './lib/vehicels/test/img{:03d}.png'.format(cnt)
-        img = cv2.imread(filename)
+        #cnt += 1
+        #if cnt > 13:
+        #    cnt = 1
+        #filename = './lib/vehicles/test/img{:03d}.png'.format(cnt)
+        #img = cv2.imread(filename)
+        ret_val, img = cap.read()
         ipd.new_image(img)
 
         ### show detection results
         print('******')
-        print('alarming list:')
+        print('Current time: {}'.format(datetime.datetime.now()))
+        #print('alarming list:')
         if len(ipd.alarming_list) == 0:
-            print('  None')
-        else
+            #print('  None')
+            pass
+        else:
             for i, v in enumerate(ipd.alarming_list):
-                print('  #{}: ({},{},{},{})'.format(i, v.det[0], v.det[1], v.det[0], v.det[3]))
-        print('violation list:')
-        if len(ipd.alarming_list) == 0:
-            print('  None')
-        else
+                #print('  #{}: ({},{},{},{}), timstamp={}'.format(i, v.det[0], v.det[1], v.det[2], v.det[3], v.timestamp))
+                cv2.rectangle(img, (int(v.det[0]),int(v.det[1])), (int(v.det[2]),int(v.det[3])), (0,255,255), 2)  # yellow bounding box
+                txt = '{}'.format(v.timestamp)
+                cv2.putText(img, txt, (int(v.det[0])+1,int(v.det[1])-2), cv2.FONT_HERSHEY_PLAIN, 1.0, (32,32,32), 4, cv2.LINE_AA)
+                cv2.putText(img, txt, (int(v.det[0]),int(v.det[1])-2), cv2.FONT_HERSHEY_PLAIN, 1.0, (0,255,255), 1, cv2.LINE_AA)
+        #print('violation list:')
+        if len(ipd.violation_list) == 0:
+            #print('  None')
+            pass
+        else:
             for i, v in enumerate(ipd.violation_list):
-                print('  #{}: ({},{},{},{})'.format(i, v.det[0], v.det[1], v.det[0], v.det[3]))
+                #print('  #{}: ({},{},{},{}), timstamp={}'.format(i, v.det[0], v.det[1], v.det[2], v.det[3], v.timestamp))
+                cv2.rectangle(img, (int(v.det[0]),int(v.det[1])), (int(v.det[2]),int(v.det[3])), (0,0,255), 2)  # yellow bounding box
+                txt = '{}'.format(v.timestamp)
+                cv2.putText(img, txt, (int(v.det[0])+1,int(v.det[1])-2), cv2.FONT_HERSHEY_PLAIN, 1.0, (32,32,32), 4, cv2.LINE_AA)
+                cv2.putText(img, txt, (int(v.det[0]),int(v.det[1])-2), cv2.FONT_HERSHEY_PLAIN, 1.0, (0,0,255), 1, cv2.LINE_AA)
 
+        cv2.imshow(windowName, img)
         key = cv2.waitKey(1000)  # 1 second
         if key == 27: # ESC key: quit program
             break
-        cnt += 1
-        if cnt > 12:
-            cne = 1
 
+    cap.release()
     cv2.destroyAllWindows()
