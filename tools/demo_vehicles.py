@@ -62,6 +62,7 @@ def vis_detections(im, class_name, dets, thresh=0.5):
 
 def vis_detections_cv(im_name, im, dets_all, cls_all, thresh=0.5):
     """Draw detected bounding boxes."""
+    assert len(dets_all) == len(cls_all)
     windowName = 'demo_vehicles'
     inds = np.where(dets_all[:, -1] >= thresh)[0]
     for i in inds:
@@ -109,12 +110,13 @@ def demo(net, image_name):
         #keep = [i for i in range(dets.shape[0])]
         keep = soft_nms(dets=dets, Nt=NMS_THRESH, method=1)
         dets = dets[keep, :]
+        inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
+        dets = dets[inds]
         dets_list.append(dets)
-        cls_list.extend([cls_ind] * len(keep))
+        cls_list.extend([cls_ind] * len(dets))
     dets_all = np.concatenate(dets_list, axis=0)
-    inds = np.where(dets_all[:, -1] >= CONF_THRESH)[0]
     nms_time = timer.toc(average=False)
-    print('Detection took {:.3f}s and found {:d} objects'.format(timer.total_time, len(inds)))
+    print('Detection took {:.3f}s and found {:d} objects'.format(timer.total_time, len(dets_all)))
     vis_detections_cv(im_name, im, dets_all, cls_list, thresh=CONF_THRESH)
 
 def parse_args():
