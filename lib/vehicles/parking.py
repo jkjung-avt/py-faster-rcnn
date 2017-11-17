@@ -21,12 +21,12 @@ import caffe
 
 # If 2 detections in neighboring images overlap over this amount, they
 # are considered as 'same detection in different image frames'.
-OVERLAP_THRESHOLD = 0.5
+OVERLAP_THRESHOLD = 0.6
 
 # If 2 image crops have similarity scores over this value, they are
 # considered as 'sam object in different image crops'. This threshold
 # is needed due to occlusion, fast lighting condition changes, rain, etc.
-SIMILARITY_THRESHOLD = 0.5
+SIMILARITY_THRESHOLD = 0.4
 
 # If a vehicle is present over this percentage of recent image frames,
 # it is considered as a stationary vehicle.
@@ -153,7 +153,7 @@ class IllegalParkingDetector(object):
             prev_time = self.img_list[-1][1]
             if curr_time - prev_time < self.DETECTION_INTERVAL:
                 return  # has not reached the next detection period
-            assert curr_time - prev_time < (self.DETECTION_INTERVAL * 2)
+            assert curr_time - prev_time < (self.DETECTION_INTERVAL * 3)
         dets = self.detect(self.net, img)
         self.img_list.append((img, curr_time, dets))
         if len(self.img_list) < self.ALARMING_PERIOD:
@@ -197,8 +197,9 @@ class IllegalParkingDetector(object):
                     mscores.append(score)
                     if score >= SIMILARITY_THRESHOLD:
                         count += 1
-            avg = sum(mscores) / float(len(mscores))
-            if avg >= SIMILARITY_THRESHOLD and count >= self.PRESENCE_FRAMES:
+            #avg = sum(mscores) / float(len(mscores))
+            #if avg >= SIMILARITY_THRESHOLD and count >= self.PRESENCE_FRAMES:
+            if count >= self.PRESENCE_FRAMES:
                 return True
         return False
 
@@ -279,19 +280,21 @@ def open_cam_rtsp(uri, width, height):
 # Testing code
 if __name__ == '__main__':
     cfg.TEST.HAS_RPN = True  # Use RPN for proposals
-    cfg.TEST.MAX_SIZE = 1920
-    cfg.TEST.SCALES = (1080,)
+    cfg.TEST.MAX_SIZE = 1280
+    cfg.TEST.SCALES = (720,)
     cfg.TEST.RPN_POST_NMS_TOP_N = 300
 
     caffe.set_mode_gpu()
-    net = caffe.Net('models/vehicles/GoogLeNet/faster_rcnn_end2end/test.prototxt', 'data/faster_rcnn_models/vehicles_googlenet_iter_490000.caffemodel', caffe.TEST)
+    net = caffe.Net('models/vehicles/GoogLeNet/faster_rcnn_end2end/test.prototxt', 'data/faster_rcnn_models/vehicles_googlenet_final.caffemodel', caffe.TEST)
 
     windowName = 'vehicles_test'
     cv2.namedWindow(windowName, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(windowName, 1920, 1080)
+    #cv2.resizeWindow(windowName, 1920, 1080)
+    cv2.resizeWindow(windowName, 1280, 720)
     cv2.moveWindow(windowName, 0, 0)
     cv2.setWindowTitle(windowName, "Testing IllegalParkingDetector")
-    cap = open_cam_rtsp('rtsp://10.130.16.240:5555/view.sdp', 1920, 1080)
+    #cap = open_cam_rtsp('rtsp://10.130.16.240:5555/view.sdp', 1920, 1080)
+    cap = open_cam_rtsp('rtsp://admin:54C415610283@10.130.16.240:5554/live.sdp', 1280, 720)
     if not cap.isOpened():
         sys.exit("Failed to open camera!")
 
@@ -304,6 +307,8 @@ if __name__ == '__main__':
         #filename = './lib/vehicles/test/img{:03d}.png'.format(cnt)
         #img = cv2.imread(filename)
         ret_val, img = cap.read()
+        if not ret_val:
+            sys.exit("Failed to read image!")
         ipd.new_image(img)
 
         ### show detection results

@@ -143,10 +143,10 @@ if __name__ == '__main__':
 
     if args.demo_net == 'vgg16':
         prototxt = 'models/vehicles/VGG16/faster_rcnn_end2end/test.prototxt'
-        caffemodel = 'data/faster_rcnn_models/vehicles_vgg16_iter_490000.caffemodel'
+        caffemodel = 'data/faster_rcnn_models/vehicles_vgg16_final.caffemodel'
     elif args.demo_net == 'googlenet':
         prototxt = 'models/vehicles/GoogLeNet/faster_rcnn_end2end/test.prototxt'
-        caffemodel = 'data/faster_rcnn_models/vehicles_googlenet_iter_490000.caffemodel'
+        caffemodel = 'data/faster_rcnn_models/vehicles_googlenet_final.caffemodel'
     else:
         sys.exit('A valid network model has not been specified!')
 
