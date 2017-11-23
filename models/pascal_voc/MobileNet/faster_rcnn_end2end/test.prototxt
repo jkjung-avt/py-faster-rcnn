@@ -7,18 +7,12 @@ name: "MobileNet"
 #    mean_value: [103.94,116.78,123.68]
 #  }
 
-layer {
-  name: "data"
-  type: "Input"
-  top: "data"
-  input_param {
-    shape {
-      dim: 1
-      dim: 3
-      dim: 224
-      dim: 224
-    }
-  }
+input: "data"
+input_shape {
+  dim: 1
+  dim: 3
+  dim: 224
+  dim: 224
 }
 
 input: "im_info"
@@ -113,7 +107,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 32
-    #engine: CAFFE
+    engine: CAFFE
     stride: 1
     weight_filler {
       type: "msra"
@@ -233,7 +227,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 64
-    #engine: CAFFE
+    engine: CAFFE
     stride: 2
     weight_filler {
       type: "msra"
@@ -353,7 +347,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 128
-    #engine: CAFFE
+    engine: CAFFE
     stride: 1
     weight_filler {
       type: "msra"
@@ -473,7 +467,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 128
-    #engine: CAFFE
+    engine: CAFFE
     stride: 2
     weight_filler {
       type: "msra"
@@ -593,7 +587,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 256
-    #engine: CAFFE
+    engine: CAFFE
     stride: 1
     weight_filler {
       type: "msra"
@@ -713,7 +707,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 256
-    #engine: CAFFE
+    engine: CAFFE
     stride: 2
     weight_filler {
       type: "msra"
@@ -833,7 +827,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 512
-    #engine: CAFFE
+    engine: CAFFE
     stride: 1
     weight_filler {
       type: "msra"
@@ -953,7 +947,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 512
-    #engine: CAFFE
+    engine: CAFFE
     stride: 1
     weight_filler {
       type: "msra"
@@ -1073,7 +1067,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 512
-    #engine: CAFFE
+    engine: CAFFE
     stride: 1
     weight_filler {
       type: "msra"
@@ -1193,7 +1187,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 512
-    #engine: CAFFE
+    engine: CAFFE
     stride: 1
     weight_filler {
       type: "msra"
@@ -1313,7 +1307,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 512
-    #engine: CAFFE
+    engine: CAFFE
     stride: 1
     weight_filler {
       type: "msra"
@@ -1543,7 +1537,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 512
-    #engine: CAFFE
+    engine: CAFFE
     stride: 2
     weight_filler {
       type: "msra"
@@ -1664,7 +1658,7 @@ layer {
     pad: 1
     kernel_size: 3
     group: 1024
-    #engine: CAFFE
+    engine: CAFFE
     stride: 1
     weight_filler {
       type: "msra"
@@ -1777,7 +1771,8 @@ layer {
   pooling_param {
     pool: AVE
     kernel_size: 7
-    global_pooling: true
+    #global_pooling: true
+    stride: 1
   }
 }
 #layer {
