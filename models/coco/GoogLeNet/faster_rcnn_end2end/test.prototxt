@@ -20,14 +20,11 @@ layer {
   bottom: "data"
   top: "conv1/7x7_s2"
   param {
-    #lr_mult: 1
-    lr_mult: 0
-    #decay_mult: 1
-    decay_mult: 0
+    lr_mult: 1
+    decay_mult: 1
   }
   param {
-    #lr_mult: 2
-    lr_mult: 0
+    lr_mult: 2
     decay_mult: 0
   }
   convolution_param {
@@ -78,14 +75,11 @@ layer {
   bottom: "pool1/norm1"
   top: "conv2/3x3_reduce"
   param {
-    #lr_mult: 1
-    lr_mult: 0
-    #decay_mult: 1
-    decay_mult: 0
+    lr_mult: 1
+    decay_mult: 1
   }
   param {
-    #lr_mult: 2
-    lr_mult: 0
+    lr_mult: 2
     decay_mult: 0
   }
   convolution_param {
@@ -112,14 +106,11 @@ layer {
   bottom: "conv2/3x3_reduce"
   top: "conv2/3x3"
   param {
-    #lr_mult: 1
-    lr_mult: 0
-    #decay_mult: 1
-    decay_mult: 0
+    lr_mult: 1
+    decay_mult: 1
   }
   param {
-    #lr_mult: 2
-    lr_mult: 0
+    lr_mult: 2
     decay_mult: 0
   }
   convolution_param {
