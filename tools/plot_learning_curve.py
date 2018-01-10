@@ -20,7 +20,7 @@ import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pylab as plt
 
-AVG_INTERVAL = 10
+AVG_INTERVAL = 20
 
 plt.style.use('ggplot')
 
