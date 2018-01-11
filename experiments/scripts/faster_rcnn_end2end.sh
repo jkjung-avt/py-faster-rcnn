@@ -58,11 +58,15 @@ case $DATASET in
     ;;
 esac
 
+if [ $NET = "ResNet50" ]; then
+    ZEROMEAN="--zeromean"
+fi
+
 LOG="experiments/logs/faster_rcnn_end2end_${NET}_${EXTRA_ARGS_SLUG}.txt.`date +'%Y-%m-%d_%H-%M-%S'`"
 exec &> >(tee -a "$LOG")
 echo Logging output to "$LOG"
 
-time ./tools/train_net.py --gpu ${GPU_ID} \
+time ./tools/train_net.py --gpu ${GPU_ID} ${ZEROMEAN} \
   --solver models/${PT_DIR}/${NET}/faster_rcnn_end2end/solver.prototxt \
   --weights data/imagenet_models/${NET}.v2.caffemodel \
   --imdb ${TRAIN_IMDB} \

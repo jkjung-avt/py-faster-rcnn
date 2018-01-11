@@ -40,6 +40,9 @@ def parse_args():
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default=None, type=str)
+    parser.add_argument("--zeromean", dest="zeromean",
+                        help="set PIXEL_MEANS to [0,0,0]",
+                        action="store_true")
     parser.add_argument('--imdb', dest='imdb_name',
                         help='dataset to train on',
                         default='voc_2007_trainval', type=str)
@@ -86,6 +89,9 @@ if __name__ == '__main__':
         cfg_from_file(args.cfg_file)
     if args.set_cfgs is not None:
         cfg_from_list(args.set_cfgs)
+
+    if args.zeromean:
+        cfg.PIXEL_MEANS = np.array([[[0.0, 0.0, 0.0]]])
 
     cfg.GPU_ID = args.gpu_id
 
