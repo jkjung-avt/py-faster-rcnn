@@ -2666,10 +2666,195 @@ layer {
   bottom: "layer_256_5_sum"
   top: "layer_256_6_sum"
 }
+
+#========= RPN ============
+
+layer {
+  name: "rpn_conv/3x3"
+  type: "Convolution"
+  #bottom: "conv5_3"
+  bottom: "layer_256_6_sum"
+  top: "rpn/output"
+  param { lr_mult: 1.0 decay_mult: 1.0 }
+  param { lr_mult: 2.0 decay_mult: 0 }
+  convolution_param {
+    num_output: 512
+    kernel_size: 3 pad: 1 stride: 1
+    weight_filler { type: "gaussian" std: 0.001 }
+    bias_filler { type: "constant" value: 0 }
+  }
+}
+layer {
+  name: "rpn_relu/3x3"
+  type: "ReLU"
+  bottom: "rpn/output"
+  top: "rpn/output"
+}
+
+layer {
+  name: "rpn_cls_score"
+  type: "Convolution"
+  bottom: "rpn/output"
+  top: "rpn_cls_score"
+  param { lr_mult: 1.0 decay_mult: 1.0 }
+  param { lr_mult: 2.0 decay_mult: 0 }
+  convolution_param {
+    num_output: 18   # 2(bg/fg) * 9(anchors)
+    kernel_size: 1 pad: 0 stride: 1
+    weight_filler { type: "gaussian" std: 0.001 }
+    bias_filler { type: "constant" value: 0 }
+  }
+}
+
+layer {
+  name: "rpn_bbox_pred"
+  type: "Convolution"
+  bottom: "rpn/output"
+  top: "rpn_bbox_pred"
+  param { lr_mult: 1.0 decay_mult: 1.0 }
+  param { lr_mult: 2.0 decay_mult: 0 }
+  convolution_param {
+    num_output: 36   # 4 * 9(anchors)
+    kernel_size: 1 pad: 0 stride: 1
+    weight_filler { type: "gaussian" std: 0.001 }
+    bias_filler { type: "constant" value: 0 }
+  }
+}
+
+layer {
+   bottom: "rpn_cls_score"
+   top: "rpn_cls_score_reshape"
+   name: "rpn_cls_score_reshape"
+   type: "Reshape"
+   reshape_param { shape { dim: 0 dim: 2 dim: -1 dim: 0 } }
+}
+
+layer {
+  name: 'rpn-data'
+  type: 'Python'
+  bottom: 'rpn_cls_score'
+  bottom: 'gt_boxes'
+  bottom: 'im_info'
+  bottom: 'data'
+  top: 'rpn_labels'
+  top: 'rpn_bbox_targets'
+  top: 'rpn_bbox_inside_weights'
+  top: 'rpn_bbox_outside_weights'
+  python_param {
+    module: 'rpn.anchor_target_layer'
+    layer: 'AnchorTargetLayer'
+    param_str: "'feat_stride': 16"
+  }
+}
+
+layer {
+  name: "rpn_loss_cls"
+  type: "SoftmaxWithLoss"
+  bottom: "rpn_cls_score_reshape"
+  bottom: "rpn_labels"
+  propagate_down: 1
+  propagate_down: 0
+  top: "rpn_cls_loss"
+  loss_weight: 1
+  loss_param {
+    ignore_label: -1
+    normalize: true
+  }
+}
+
+layer {
+  name: "rpn_loss_bbox"
+  type: "SmoothL1Loss"
+  bottom: "rpn_bbox_pred"
+  bottom: "rpn_bbox_targets"
+  bottom: 'rpn_bbox_inside_weights'
+  bottom: 'rpn_bbox_outside_weights'
+  top: "rpn_loss_bbox"
+  loss_weight: 1
+  smooth_l1_loss_param { sigma: 3.0 }
+}
+
+#========= RoI Proposal ============
+
+layer {
+  name: "rpn_cls_prob"
+  type: "Softmax"
+  bottom: "rpn_cls_score_reshape"
+  top: "rpn_cls_prob"
+}
+
+layer {
+  name: 'rpn_cls_prob_reshape'
+  type: 'Reshape'
+  bottom: 'rpn_cls_prob'
+  top: 'rpn_cls_prob_reshape'
+  reshape_param { shape { dim: 0 dim: 18 dim: -1 dim: 0 } }
+}
+
+layer {
+  name: 'proposal'
+  type: 'Python'
+  bottom: 'rpn_cls_prob_reshape'
+  bottom: 'rpn_bbox_pred'
+  bottom: 'im_info'
+  top: 'rpn_rois'
+  #top: 'rpn_scores'
+  python_param {
+    module: 'rpn.proposal_layer'
+    layer: 'ProposalLayer'
+    param_str: "'feat_stride': 16"
+  }
+}
+
+#layer {
+#  name: 'debug-data'
+#  type: 'Python'
+#  bottom: 'data'
+#  bottom: 'rpn_rois'
+#  bottom: 'rpn_scores'
+#  python_param {
+#    module: 'rpn.debug_layer'
+#    layer: 'RPNDebugLayer'
+#  }
+#}
+
+layer {
+  name: 'roi-data'
+  type: 'Python'
+  bottom: 'rpn_rois'
+  bottom: 'gt_boxes'
+  top: 'rois'
+  top: 'labels'
+  top: 'bbox_targets'
+  top: 'bbox_inside_weights'
+  top: 'bbox_outside_weights'
+  python_param {
+    module: 'rpn.proposal_target_layer'
+    layer: 'ProposalTargetLayer'
+    param_str: "'num_classes': 21"
+  }
+}
+
+#========= RCNN ============
+
+layer {
+  name: "roi_pool5"
+  type: "ROIPooling"
+  #bottom: "conv5_3"
+  bottom: "layer_256_6_sum"
+  bottom: "rois"
+  top: "roi_pool5"
+  roi_pooling_param {
+    pooled_w: 14
+    pooled_h: 14
+    spatial_scale: 0.0625 # 1/16
+  }
+}
+
 layer {
   name: "layer_512_1_bn1"
   type: "BatchNorm"
-  bottom: "layer_256_6_sum"
+  bottom: "roi_pool5"
   top: "layer_512_1_bn1"
   param {
     lr_mult: 0.0
@@ -3307,203 +3492,46 @@ layer {
   bottom: "layer_512_3_sum"
   top: "layer_512_3_sum"
 }
-
-#========= RPN ============
-
 layer {
-  name: "rpn_conv/3x3"
+  name: "last_conv"
   type: "Convolution"
-  #bottom: "conv5_3"
   bottom: "layer_512_3_sum"
-  top: "rpn/output"
-  param { lr_mult: 1.0 }
-  param { lr_mult: 2.0 }
+  top: "last_conv"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 1.0
+  }
   convolution_param {
     num_output: 512
-    kernel_size: 3 pad: 1 stride: 1
-    weight_filler { type: "gaussian" std: 0.001 }
-    bias_filler { type: "constant" value: 0 }
-  }
-}
-layer {
-  name: "rpn_relu/3x3"
-  type: "ReLU"
-  bottom: "rpn/output"
-  top: "rpn/output"
-}
-
-layer {
-  name: "rpn_cls_score"
-  type: "Convolution"
-  bottom: "rpn/output"
-  top: "rpn_cls_score"
-  param { lr_mult: 1.0 }
-  param { lr_mult: 2.0 }
-  convolution_param {
-    num_output: 18   # 2(bg/fg) * 9(anchors)
-    kernel_size: 1 pad: 0 stride: 1
-    weight_filler { type: "gaussian" std: 0.001 }
-    bias_filler { type: "constant" value: 0 }
-  }
-}
-
-layer {
-  name: "rpn_bbox_pred"
-  type: "Convolution"
-  bottom: "rpn/output"
-  top: "rpn_bbox_pred"
-  param { lr_mult: 1.0 }
-  param { lr_mult: 2.0 }
-  convolution_param {
-    num_output: 36   # 4 * 9(anchors)
-    kernel_size: 1 pad: 0 stride: 1
-    weight_filler { type: "gaussian" std: 0.001 }
-    bias_filler { type: "constant" value: 0 }
-  }
-}
-
-layer {
-   bottom: "rpn_cls_score"
-   top: "rpn_cls_score_reshape"
-   name: "rpn_cls_score_reshape"
-   type: "Reshape"
-   reshape_param { shape { dim: 0 dim: 2 dim: -1 dim: 0 } }
-}
-
-layer {
-  name: 'rpn-data'
-  type: 'Python'
-  bottom: 'rpn_cls_score'
-  bottom: 'gt_boxes'
-  bottom: 'im_info'
-  bottom: 'data'
-  top: 'rpn_labels'
-  top: 'rpn_bbox_targets'
-  top: 'rpn_bbox_inside_weights'
-  top: 'rpn_bbox_outside_weights'
-  python_param {
-    module: 'rpn.anchor_target_layer'
-    layer: 'AnchorTargetLayer'
-    param_str: "'feat_stride': 16"
-  }
-}
-
-layer {
-  name: "rpn_loss_cls"
-  type: "SoftmaxWithLoss"
-  bottom: "rpn_cls_score_reshape"
-  bottom: "rpn_labels"
-  propagate_down: 1
-  propagate_down: 0
-  top: "rpn_cls_loss"
-  loss_weight: 1
-  loss_param {
-    ignore_label: -1
-    normalize: true
-  }
-}
-
-layer {
-  name: "rpn_loss_bbox"
-  type: "SmoothL1Loss"
-  bottom: "rpn_bbox_pred"
-  bottom: "rpn_bbox_targets"
-  bottom: 'rpn_bbox_inside_weights'
-  bottom: 'rpn_bbox_outside_weights'
-  top: "rpn_loss_bbox"
-  loss_weight: 1
-  smooth_l1_loss_param { sigma: 3.0 }
-}
-
-#========= RoI Proposal ============
-
-layer {
-  name: "rpn_cls_prob"
-  type: "Softmax"
-  bottom: "rpn_cls_score_reshape"
-  top: "rpn_cls_prob"
-}
-
-layer {
-  name: 'rpn_cls_prob_reshape'
-  type: 'Reshape'
-  bottom: 'rpn_cls_prob'
-  top: 'rpn_cls_prob_reshape'
-  reshape_param { shape { dim: 0 dim: 18 dim: -1 dim: 0 } }
-}
-
-layer {
-  name: 'proposal'
-  type: 'Python'
-  bottom: 'rpn_cls_prob_reshape'
-  bottom: 'rpn_bbox_pred'
-  bottom: 'im_info'
-  top: 'rpn_rois'
-  #top: 'rpn_scores'
-  python_param {
-    module: 'rpn.proposal_layer'
-    layer: 'ProposalLayer'
-    param_str: "'feat_stride': 16"
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm: FAN_OUT
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
   }
 }
 
 #layer {
-#  name: 'debug-data'
-#  type: 'Python'
-#  bottom: 'data'
-#  bottom: 'rpn_rois'
-#  bottom: 'rpn_scores'
-#  python_param {
-#    module: 'rpn.debug_layer'
-#    layer: 'RPNDebugLayer'
+#  name: "global_pool"
+#  type: "Pooling"
+#  #bottom: "layer_512_3_sum"
+#  bottom: "roi_pool5"
+#  top: "global_pool"
+#  pooling_param {
+#    pool: AVE
+#    global_pooling: true
 #  }
 #}
-
-layer {
-  name: 'roi-data'
-  type: 'Python'
-  bottom: 'rpn_rois'
-  bottom: 'gt_boxes'
-  top: 'rois'
-  top: 'labels'
-  top: 'bbox_targets'
-  top: 'bbox_inside_weights'
-  top: 'bbox_outside_weights'
-  python_param {
-    module: 'rpn.proposal_target_layer'
-    layer: 'ProposalTargetLayer'
-    param_str: "'num_classes': 21"
-  }
-}
-
-#========= RCNN ============
-
-layer {
-  name: "roi_pool5"
-  type: "ROIPooling"
-  #bottom: "conv5_3"
-  bottom: "layer_512_3_sum"
-  bottom: "rois"
-  top: "roi_pool5"
-  roi_pooling_param {
-    pooled_w: 7
-    pooled_h: 7
-    #spatial_scale: 0.0625 # 1/16
-    spatial_scale: 0.03125 # 1/32
-  }
-}
-
-layer {
-  name: "global_pool"
-  type: "Pooling"
-  #bottom: "layer_512_3_sum"
-  bottom: "roi_pool5"
-  top: "global_pool"
-  pooling_param {
-    pool: AVE
-    global_pooling: true
-  }
-}
 #layer {
 #  name: "score"
 #  type: "InnerProduct"
@@ -3533,14 +3561,10 @@ layer {
   name: "cls_score"
   type: "InnerProduct"
   #bottom: "fc7"
-  bottom: "global_pool"
+  bottom: "last_conv"
   top: "cls_score"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+  param { lr_mult: 1.0 decay_mult: 1.0 }
+  param { lr_mult: 2.0 decay_mult: 0 }
   inner_product_param {
     num_output: 21
     weight_filler {
@@ -3557,7 +3581,7 @@ layer {
   name: "bbox_pred"
   type: "InnerProduct"
   #bottom: "fc7"
-  bottom: "global_pool"
+  bottom: "last_conv"
   top: "bbox_pred"
   param {
     lr_mult: 1

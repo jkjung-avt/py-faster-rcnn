@@ -3347,6 +3347,7 @@ layer {
     bias_filler { type: "constant" value: 0 }
   }
 }
+
 layer {
   name: "rpn_bbox_pred"
   type: "Convolution"
@@ -3361,6 +3362,7 @@ layer {
     bias_filler { type: "constant" value: 0 }
   }
 }
+
 layer {
    bottom: "rpn_cls_score"
    top: "rpn_cls_score_reshape"
@@ -3377,6 +3379,7 @@ layer {
   bottom: "rpn_cls_score_reshape"
   top: "rpn_cls_prob"
 }
+
 layer {
   name: 'rpn_cls_prob_reshape'
   type: 'Reshape'
@@ -3384,6 +3387,7 @@ layer {
   top: 'rpn_cls_prob_reshape'
   reshape_param { shape { dim: 0 dim: 18 dim: -1 dim: 0 } }
 }
+
 layer {
   name: 'proposal'
   type: 'Python'
@@ -3433,19 +3437,13 @@ layer {
   #bottom: "fc7"
   bottom: "global_pool"
   top: "cls_score"
-  param {
-    lr_mult: 1
-    decay_mult: 1
-  }
-  param {
-    lr_mult: 2
-    decay_mult: 0
-  }
+  param { lr_mult: 1.0 decay_mult: 1.0 }
+  param { lr_mult: 2.0 decay_mult: 0 }
   inner_product_param {
     num_output: 21
     weight_filler {
       type: "gaussian"
-      std: 0.001
+      std: 0.01
     }
     bias_filler {
       type: "constant"
@@ -3469,7 +3467,7 @@ layer {
     num_output: 84
     weight_filler {
       type: "gaussian"
-      std: 0.0001
+      std: 0.001
     }
     bias_filler {
       type: "constant"
