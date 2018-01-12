@@ -17,6 +17,7 @@ import caffe
 import argparse
 import pprint
 import time, os, sys
+import numpy as np
 
 def parse_args():
     """
