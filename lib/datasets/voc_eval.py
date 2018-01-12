@@ -145,6 +145,14 @@ def voc_eval(detpath,
     # sort by confidence
     sorted_ind = np.argsort(-confidence)
     sorted_scores = np.sort(-confidence)
+
+    # Fix based on py-faster-rcnn issue #30
+    if len(sorted_ind) < 1:
+        rec = 0.0
+        prec = 0.0
+        ap = 0.0
+        return rec, prec, ap
+
     BB = BB[sorted_ind, :]
     image_ids = [image_ids[x] for x in sorted_ind]
 
