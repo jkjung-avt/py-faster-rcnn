@@ -3446,6 +3446,12 @@ layer {
     }
   }
 }
+layer {
+  name: "real_last_relu"
+  type: "ReLU"
+  bottom: "last_conv"
+  top: "last_conv"
+}
 
 #layer {
 #  name: "global_pool"
