@@ -3418,40 +3418,34 @@ layer {
   bottom: "layer_512_3_sum"
   top: "layer_512_3_sum"
 }
-layer {
-  name: "last_conv"
-  type: "Convolution"
-  bottom: "layer_512_3_sum"
-  top: "last_conv"
-  param {
-    lr_mult: 1.0
-    decay_mult: 1.0
-  }
-  param {
-    lr_mult: 2.0
-    decay_mult: 1.0
-  }
-  convolution_param {
-    num_output: 512
-    pad: 0
-    kernel_size: 1
-    stride: 1
-    weight_filler {
-      type: "msra"
-      variance_norm: FAN_OUT
-    }
-    bias_filler {
-      type: "constant"
-      value: 0.0
-    }
-  }
-}
-layer {
-  name: "real_last_relu"
-  type: "ReLU"
-  bottom: "last_conv"
-  top: "last_conv"
-}
+#layer {
+#  name: "last_conv"
+#  type: "Convolution"
+#  bottom: "layer_512_3_sum"
+#  top: "last_conv"
+#  param {
+#    lr_mult: 1.0
+#    decay_mult: 1.0
+#  }
+#  param {
+#    lr_mult: 2.0
+#    decay_mult: 1.0
+#  }
+#  convolution_param {
+#    num_output: 512
+#    pad: 0
+#    kernel_size: 1
+#    stride: 1
+#    weight_filler {
+#      type: "msra"
+#      variance_norm: FAN_OUT
+#    }
+#    bias_filler {
+#      type: "constant"
+#      value: 0.0
+#    }
+#  }
+#}
 
 #layer {
 #  name: "global_pool"
@@ -3469,7 +3463,7 @@ layer {
   name: "cls_score"
   type: "InnerProduct"
   #bottom: "fc7"
-  bottom: "last_conv"
+  bottom: "layer_512_3_sum"
   top: "cls_score"
   param { lr_mult: 1.0 decay_mult: 1.0 }
   param { lr_mult: 2.0 decay_mult: 0 }
@@ -3489,7 +3483,7 @@ layer {
   name: "bbox_pred"
   type: "InnerProduct"
   #bottom: "fc7"
-  bottom: "last_conv"
+  bottom: "layer_512_3_sum"
   top: "bbox_pred"
   param {
     lr_mult: 1
