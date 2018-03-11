@@ -2018,6 +2018,16 @@ layer {
 #  }
 #}
 
+#layer {
+#  name: "pool4/drop_7x7_s1"
+#  type: "Dropout"
+#  bottom: "roi_pool4"
+#  top: "roi_pool4"
+#  dropout_param {
+#    dropout_ratio: 0.5
+#  }
+#}
+
 layer {
   name: "inception_5a/1x1"
   type: "Convolution"
@@ -2451,15 +2461,15 @@ layer {
     stride: 1
   }
 }
-layer {
-  name: "pool5/drop_7x7_s1"
-  type: "Dropout"
-  bottom: "pool5/7x7_s1"
-  top: "pool5/7x7_s1"
-  dropout_param {
-    dropout_ratio: 0.4
-  }
-}
+#layer {
+#  name: "pool5/drop_7x7_s1"
+#  type: "Dropout"
+#  bottom: "pool5/7x7_s1"
+#  top: "pool5/7x7_s1"
+#  dropout_param {
+#    dropout_ratio: 0.4
+#  }
+#}
 
 layer {
   name: "cls_score"
