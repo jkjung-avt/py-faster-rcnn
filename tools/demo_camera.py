@@ -39,8 +39,8 @@ COLORS = ((0,0,0),
           (204,0,102), (102,0,204), (153,153,255), (153,204,255),
           (153,255,255), (153,255,153), (255,255,153), (255,204,153),
           (255,153,153), (255,153,204), (255,153,255), (204,153,255))
-prototxt = 'models/pascal_voc/VGG16/faster_rcnn_end2end/test.prototxt'
-caffemodel = 'data/faster_rcnn_models/VGG16_faster_rcnn_final.caffemodel'
+DEFAULT_PROTOTXT = 'models/pascal_voc/VGG16/faster_rcnn_end2end/test.prototxt'
+DEFAULT_MODEL    = 'data/faster_rcnn_models/VGG16_faster_rcnn_final.caffemodel'
 windowName = 'FRCN-demo'
 
 
@@ -114,6 +114,12 @@ def parse_args():
     parser.add_argument('--height', dest='image_height',
                         help='image width [480]',
                         default=480, type=int)
+    parser.add_argument('--prototxt', dest='caffe_prototxt',
+                        help='caffe prototxt of the Faster RCNN model [{}]'.format(DEFAULT_PROTOTXT),
+                        default=DEFAULT_PROTOTXT, type=str)
+    parser.add_argument('--model', dest='caffe_model',
+                        help='the caffemodel (weights) file [{}]'.format(DEFAULT_MODEL),
+                        default=DEFAULT_MODEL, type=str)
     args = parser.parse_args()
     return args
 
@@ -138,9 +144,9 @@ def open_cam_onboard(width, height):
 
 
 def open_window(width, height):
-    cv2.namedWindow(windowName, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
     cv2.resizeWindow(windowName, width, height)
-    cv2.moveWindow(windowName, 0, 0)
+    #cv2.moveWindow(windowName, 0, 0)
     cv2.setWindowTitle(windowName, 'Faster RCNN camera demo')
 
 
@@ -149,8 +155,10 @@ if __name__ == '__main__':
 
     args = parse_args()
 
-    if not os.path.isfile(caffemodel):
-        sys.exit('{} not found!'.format(caffemodel))
+    if not os.path.isfile(args.caffe_prototxt):
+        sys.exit('{} not found!'.format(args.caffe_prototxt))
+    if not os.path.isfile(args.caffe_model):
+        sys.exit('{} not found!'.format(args.caffe_model))
 
     if args.cpu_mode:
         caffe.set_mode_cpu()
@@ -158,7 +166,7 @@ if __name__ == '__main__':
         caffe.set_mode_gpu()
         caffe.set_device(args.gpu_id)
         cfg.GPU_ID = args.gpu_id
-    net = caffe.Net(prototxt, caffemodel, caffe.TEST)
+    net = caffe.Net(args.caffe_prototxt, args.caffe_model, caffe.TEST)
 
     # Warm-up with 2 dummy images
     im = 128 * np.ones((640, 480, 3), dtype=np.uint8)
